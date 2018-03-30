@@ -4,10 +4,18 @@ using UnityEngine;
 
 public class PuckManager : MonoBehaviour {
 
-    public GameObject puck1;
-    public GameObject puck2;
-    private Rigidbody puck1_rb;
-    private Rigidbody puck2_rb;
+    public GameObject leftPuck;
+    public GameObject rightPuck;
+    private Rigidbody leftPuck_rb;
+    private Rigidbody rightPuck_rb;
+    private Vector3 leftPuckForce;
+    private Vector3 rightPuckForce;
+    [HideInInspector]
+    public float[] leftPuckInput; //index 0: up, 1: right, 2: down, 3: left
+    [HideInInspector]
+    public float[] rightPuckInput;
+    [HideInInspector]
+    public bool boopButton; //whether the boop button is pressed
 
     //The maximum force that a keypress adds
     //(For a keyboard, it always adds max force)
@@ -17,22 +25,34 @@ public class PuckManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        puck1_rb = puck1.GetComponent<Rigidbody>();
-        puck2_rb = puck2.GetComponent<Rigidbody>();
+        leftPuck_rb = leftPuck.GetComponent<Rigidbody>();
+        rightPuck_rb = rightPuck.GetComponent<Rigidbody>();
+
+        //default input is NONE
+        leftPuckInput = new float[] { 0f, 0f, 0f, 0f };
+        rightPuckInput = new float[] { 0f, 0f, 0f, 0f };
+        boopButton = false;
     }
-	
-	// Update is called once per frame
-	void Update () {
-        
-	}
 
     void FixedUpdate()
     {
-        //Lock the rotation
-        puck1.transform.rotation = Quaternion.Euler(Vector3.zero);
-        puck2.transform.rotation = Quaternion.Euler(Vector3.zero);
-        //puck1.transform.position.Set(puck1.transform.position.x, puck1.transform.position.y, 0f); //TODO: there has to be a better way to do this
+        leftPuckForce = Vector3.zero;
+        rightPuckForce = Vector3.zero;
 
-        puck1_rb.AddForce(new Vector3(0, 1f, 0));
+        //Left
+        leftPuckForce += Vector3.up * leftPuckInput[0];
+        leftPuckForce += Vector3.right * leftPuckInput[1];
+        leftPuckForce += Vector3.down * leftPuckInput[2];
+        leftPuckForce += Vector3.left * leftPuckInput[3];
+
+        //Right
+        rightPuckForce += Vector3.up * rightPuckInput[0];
+        rightPuckForce += Vector3.right * rightPuckInput[1];
+        rightPuckForce += Vector3.down * rightPuckInput[2];
+        rightPuckForce += Vector3.left * rightPuckInput[3];
+
+        //normalize the vectors and then multiply by the max force
+        leftPuck_rb.AddForce(leftPuckForce * maxForce); //TODO: maybe figure out a way to normalize this and stop diagonals from being faster
+        rightPuck_rb.AddForce(rightPuckForce * maxForce);
     }
 }

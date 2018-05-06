@@ -1,10 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
-public class WorldManager : MonoBehaviour {
-
+public class WorldManager : MonoBehaviour
+{
     //FIELDS
+    public PuckManager pm;
 
     //The scene's main camera, must be orthographic
     public Camera mainCamera;
@@ -13,6 +17,20 @@ public class WorldManager : MonoBehaviour {
     //The thickness of the cube primitives that make up the walls
     public float wallThickness;
     private float wallDepth = 10f; //Maybe make this public
+    public PhysicMaterial wallPM;
+
+    //Canvas that the text is on
+    public Canvas canvas;
+    public TextMeshProUGUI leftTimer;
+    public TextMeshProUGUI rightTimer;
+    public TextMeshProUGUI title;
+    public TextMeshProUGUI p1Wins;
+    public TextMeshProUGUI p2Wins;
+
+    [HideInInspector]
+    public float leftTime;
+    [HideInInspector]
+    public float rightTime;
 
     //PROPERTIES
 
@@ -21,8 +39,8 @@ public class WorldManager : MonoBehaviour {
     /// </summary>
     public Vector3[] CameraBounds { get { return cameraBounds; } }
 
-
-	void Start () {
+    public void Init()
+    {
         CreateWorld();
     }
 
@@ -30,6 +48,7 @@ public class WorldManager : MonoBehaviour {
     {
         CalculateOrthographicCameraBounds();
         CreateWalls();
+        ResizeCanvas();
     }
 
     /// <summary>
@@ -58,6 +77,7 @@ public class WorldManager : MonoBehaviour {
         leftWall.GetComponent<MeshRenderer>().enabled = false;
         leftWall.AddComponent<BoxCollider>();
         leftWall.name = "Left Wall";
+        leftWall.GetComponent<Collider>().material = wallPM;
 
         GameObject rightWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         rightWall.transform.localScale = new Vector3(wallThickness, mainCamera.orthographicSize * 2, wallDepth);
@@ -65,6 +85,7 @@ public class WorldManager : MonoBehaviour {
         rightWall.GetComponent<MeshRenderer>().enabled = false;
         rightWall.AddComponent<BoxCollider>();
         rightWall.name = "Right Wall";
+        rightWall.GetComponent<Collider>().material = wallPM;
 
         GameObject topWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         topWall.transform.localScale = new Vector3(mainCamera.orthographicSize * 2 * mainCamera.aspect, wallThickness, wallDepth);
@@ -72,6 +93,7 @@ public class WorldManager : MonoBehaviour {
         topWall.GetComponent<MeshRenderer>().enabled = false;
         topWall.AddComponent<BoxCollider>();
         topWall.name = "Top Wall";
+        topWall.GetComponent<Collider>().material = wallPM;
 
         GameObject bottomWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         bottomWall.transform.localScale = new Vector3(mainCamera.orthographicSize * 2 * mainCamera.aspect, wallThickness, wallDepth);
@@ -79,6 +101,7 @@ public class WorldManager : MonoBehaviour {
         bottomWall.GetComponent<MeshRenderer>().enabled = false;
         bottomWall.AddComponent<BoxCollider>();
         bottomWall.name = "Bottom Wall";
+        bottomWall.GetComponent<Collider>().material = wallPM;
 
         GameObject walls = new GameObject();
         walls.name = "Walls";
@@ -86,5 +109,56 @@ public class WorldManager : MonoBehaviour {
         rightWall.transform.SetParent(walls.transform);
         topWall.transform.SetParent(walls.transform);
         bottomWall.transform.SetParent(walls.transform);
+    }
+
+    private void ResizeCanvas()
+    {
+        float canvasWidth = cameraBounds[1].x - cameraBounds[0].x;
+        float canvasHeight = cameraBounds[1].y - cameraBounds[2].y;
+
+        //Scores
+        canvas.GetComponent<RectTransform>().sizeDelta = new Vector2(canvasWidth, canvasHeight);
+        leftTimer.GetComponent<RectTransform>().sizeDelta = new Vector2(-canvasWidth / 2, 0);
+        rightTimer.GetComponent<RectTransform>().sizeDelta = new Vector2(-canvasWidth / 2, 0);
+        rightTimer.GetComponent<RectTransform>().anchoredPosition = new Vector2(canvasWidth / 2, 0);
+    }
+
+    public void SetTitleScreenVisibility(bool isVisible)
+    {
+        title.gameObject.SetActive(isVisible);
+    }
+
+    //Sets the scores to active and resets their timers
+    public void SpawnTimers()
+    {
+        rightTime = 30f;
+        leftTime = 30f;
+        leftTimer.gameObject.SetActive(true);
+        rightTimer.gameObject.SetActive(true);
+    }
+
+    public void UpdateTimers()
+    {
+        leftTimer.text = (int)leftTime + "";
+        rightTimer.text = (int)rightTime + "";
+
+        if (pm.neutralPuck.transform.position.x < -0.01)
+            leftTime -= Time.deltaTime;
+        else if (pm.neutralPuck.transform.position.x > 0.01)
+            rightTime -= Time.deltaTime;
+    }
+
+    public void DestroyTimers()
+    {
+        leftTimer.gameObject.SetActive(false);
+        rightTimer.gameObject.SetActive(false);
+    }
+
+    public void SetVictorScreenVisibility(bool isVisible)
+    {
+        if (leftTime <= 1)
+            p2Wins.gameObject.SetActive(isVisible);
+        else if (rightTime <= 1)
+            p1Wins.gameObject.SetActive(isVisible);
     }
 }
